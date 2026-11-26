@@ -20,7 +20,7 @@ so the lookup failure is silent.
 GitHub shows the stock job with a red cross and the other with a green check,
 so a run whose overall status is "failure" is the expected outcome.
 
-## What the workflow does
+## Steps both jobs share
 
 Both jobs build apparmor.d at commit [`4c4fec7`][commit]
 with its own [`just build`][jbuild] and [`prebuild`][jprebuild]
@@ -28,7 +28,10 @@ on Ubuntu 26.04, the only Ubuntu release `prebuild` [accepts][ubuntu],
 install only `torbrowser-tor` with [`just local torbrowser-tor`][jlocal],
 put it in enforce mode and check that it is.
 
-### ❌ Stock profile: fails (red)
+The lookup target only has to be a public name;
+`app.datapacket.com` is the name lyrebird failed to resolve on the reporting machine.
+
+## ❌ Stock profile: fails (red)
 
 The job `stock torbrowser-tor (a red run means the bug reproduced)`
 runs `getent hosts app.datapacket.com` outside any profile (control),
@@ -36,15 +39,12 @@ then under `torbrowser-tor`.
 Its last step asserts the lookup works,
 so a red run on that step means the problem reproduced.
 
-### ✅ Profile with the pluggable-transports child: passes (green)
+## ✅ Profile with the pluggable-transports child: passes (green)
 
 The job `torbrowser-tor with the pluggable-transports child profile`
 applies [`torbrowser-tor-pluggable-transports.patch`](torbrowser-tor-pluggable-transports.patch) first.
 It asserts the lookup works under `torbrowser-tor//pluggable-transports`
 and still fails under `torbrowser-tor` itself.
-
-The lookup target only has to be a public name;
-`app.datapacket.com` is the name lyrebird failed to resolve on the reporting machine.
 
 [pt]: https://github.com/roddhjav/apparmor.d/blob/4c4fec70fcd19307a871b3ecc7f117a9ad989c9f/apparmor.d/groups/browsers/torbrowser-tor#L25
 [net]: https://github.com/roddhjav/apparmor.d/blob/4c4fec70fcd19307a871b3ecc7f117a9ad989c9f/apparmor.d/groups/browsers/torbrowser-tor#L18-L19
