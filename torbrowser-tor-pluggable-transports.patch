@@ -1,6 +1,8 @@
+diff --git a/apparmor.d/groups/browsers/torbrowser-tor b/apparmor.d/groups/browsers/torbrowser-tor
+index 1bfc41f..8872ea5 100644
 --- a/apparmor.d/groups/browsers/torbrowser-tor
 +++ b/apparmor.d/groups/browsers/torbrowser-tor
-@@ -22,7 +22,7 @@
+@@ -22,7 +22,7 @@ profile torbrowser-tor @{exec_path} {
  
    @{lib_dirs}/{,**}                                    r,
    @{lib_dirs}/TorBrowser/Tor/*.so*                     m,
@@ -9,7 +11,7 @@
  
    owner @{data_dirs}/Tor/ rw,
    owner @{data_dirs}/Tor/** rw,
-@@ -33,6 +33,8 @@
+@@ -33,6 +33,8 @@ profile torbrowser-tor @{exec_path} {
    @{PROC}/sys/kernel/random/uuid r,
    @{PROC}/sys/net/core/somaxconn r,
  
@@ -18,7 +20,7 @@
    deny /etc/group r,
    deny /etc/host.conf r,
    deny /etc/hosts r,
-@@ -45,6 +47,29 @@
+@@ -45,6 +47,29 @@ profile torbrowser-tor @{exec_path} {
    deny /etc/services r,
    deny /var/lib/dbus/machine-id r,
  
@@ -47,3 +49,4 @@
 +
    include if exists <local/torbrowser-tor>
  }
+ 

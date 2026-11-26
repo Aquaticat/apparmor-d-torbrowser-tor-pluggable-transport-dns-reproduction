@@ -32,14 +32,16 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: apparmor.d/go.mod
-      - name: Build the profiles (enforce, abi 4) and install torbrowser-tor alone
+      - name: Build the profiles (abi 4) and install torbrowser-tor alone, in enforce mode
         working-directory: apparmor.d
         run: |
           just build
-          ./.build/prebuild --buildir .build --enforce --abi 4
+          ./.build/prebuild --buildir .build --abi 4
           sudo just local torbrowser-tor
+          sudo sed --in-place --regexp-extended 's/ flags=\(complain\)//; s/,complain\)/)/; s/\(complain,/(/' /etc/apparmor.d/torbrowser-tor
+          grep --line-number 'profile ' /etc/apparmor.d/torbrowser-tor
           sudo apparmor_parser --replace /etc/apparmor.d/torbrowser-tor
-          sudo aa-status | grep --fixed-strings torbrowser-tor
+          sudo aa-status --json | python3 -c 'import json, sys; p = json.load(sys.stdin)["profiles"]; print({k: v for k, v in p.items() if k.startswith("torbrowser-tor")}); assert p.get("torbrowser-tor") == "enforce"'
       - name: Control, outside any profile the name resolves
         run: getent hosts "${LOOKUP_NAME}"
       - name: Expected behaviour, the name resolves under torbrowser-tor (pluggable transports run here)
@@ -64,14 +66,16 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: apparmor.d/go.mod
-      - name: Build the profiles (enforce, abi 4) and install torbrowser-tor alone
+      - name: Build the profiles (abi 4) and install torbrowser-tor alone, in enforce mode
         working-directory: apparmor.d
         run: |
           just build
-          ./.build/prebuild --buildir .build --enforce --abi 4
+          ./.build/prebuild --buildir .build --abi 4
           sudo just local torbrowser-tor
+          sudo sed --in-place --regexp-extended 's/ flags=\(complain\)//; s/,complain\)/)/; s/\(complain,/(/' /etc/apparmor.d/torbrowser-tor
+          grep --line-number 'profile ' /etc/apparmor.d/torbrowser-tor
           sudo apparmor_parser --replace /etc/apparmor.d/torbrowser-tor
-          sudo aa-status | grep --fixed-strings 'torbrowser-tor//pluggable-transports'
+          sudo aa-status --json | python3 -c 'import json, sys; p = json.load(sys.stdin)["profiles"]; print({k: v for k, v in p.items() if k.startswith("torbrowser-tor")}); assert p.get("torbrowser-tor") == "enforce"; assert p.get("torbrowser-tor//pluggable-transports") == "enforce"'
       - name: Control, outside any profile the name resolves
         run: getent hosts "${LOOKUP_NAME}"
       - name: Expected behaviour, the name resolves under the pluggable-transports child

@@ -12,7 +12,8 @@ Snowflake has to resolve its domain front and its STUN servers, so it cannot con
 ## What the workflow does
 
 Both jobs build apparmor.d at commit `4c4fec70fcd19307a871b3ecc7f117a9ad989c9f` with its own `prebuild` tool
-(`--enforce --abi 4`, because Ubuntu 24.04 ships AppArmor 4.0)
+(`--abi 4`, because Ubuntu 24.04 ships AppArmor 4.0),
+puts `torbrowser-tor` in enforce mode and checks that it is
 and install only `torbrowser-tor` with `just local torbrowser-tor`.
 
 - **stock torbrowser-tor** runs `getent hosts app.datapacket.com` outside any profile (control),
