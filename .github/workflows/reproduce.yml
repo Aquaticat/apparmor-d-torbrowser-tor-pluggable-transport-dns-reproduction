@@ -16,7 +16,7 @@ env:
 jobs:
   stock-profile:
     name: stock torbrowser-tor (a red run means the bug reproduced)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - name: Install just, pinned and checksum-verified
@@ -32,11 +32,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: apparmor.d/go.mod
-      - name: Build the profiles (abi 4) and install torbrowser-tor alone, in enforce mode
+      - name: Build the profiles and install torbrowser-tor alone, in enforce mode
         working-directory: apparmor.d
         run: |
           just build
-          ./.build/prebuild --buildir .build --abi 4
+          ./.build/prebuild --buildir .build
           sudo just local torbrowser-tor
           sudo sed --in-place --regexp-extended 's/ flags=\(complain\)//; s/,complain\)/)/; s/\(complain,/(/' /etc/apparmor.d/torbrowser-tor
           grep --line-number 'profile ' /etc/apparmor.d/torbrowser-tor
@@ -49,7 +49,7 @@ jobs:
 
   patched-profile:
     name: torbrowser-tor with the pluggable-transports child profile
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v4
       - name: Install just, pinned and checksum-verified
@@ -66,11 +66,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: apparmor.d/go.mod
-      - name: Build the profiles (abi 4) and install torbrowser-tor alone, in enforce mode
+      - name: Build the profiles and install torbrowser-tor alone, in enforce mode
         working-directory: apparmor.d
         run: |
           just build
-          ./.build/prebuild --buildir .build --abi 4
+          ./.build/prebuild --buildir .build
           sudo just local torbrowser-tor
           sudo sed --in-place --regexp-extended 's/ flags=\(complain\)//; s/,complain\)/)/; s/\(complain,/(/' /etc/apparmor.d/torbrowser-tor
           grep --line-number 'profile ' /etc/apparmor.d/torbrowser-tor
