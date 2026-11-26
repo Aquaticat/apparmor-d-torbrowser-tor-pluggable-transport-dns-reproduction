@@ -19,13 +19,18 @@ on Ubuntu 26.04, the only Ubuntu release `prebuild` accepts,
 install only `torbrowser-tor` with `just local torbrowser-tor`,
 put it in enforce mode and check that it is.
 
-- **stock torbrowser-tor** runs `getent hosts app.datapacket.com` outside any profile (control),
-  then under `torbrowser-tor`. The last step asserts the lookup works,
-  so a red run on that step means the problem reproduced.
-- **torbrowser-tor with the pluggable-transports child profile** applies
-  [`torbrowser-tor-pluggable-transports.patch`](torbrowser-tor-pluggable-transports.patch) first.
-  It asserts the lookup works under `torbrowser-tor//pluggable-transports`
-  and still fails under `torbrowser-tor` itself.
+### Stock profile
+
+The job runs `getent hosts app.datapacket.com` outside any profile (control),
+then under `torbrowser-tor`.
+Its last step asserts the lookup works,
+so a red run on that step means the problem reproduced.
+
+### Profile with the pluggable-transports child
+
+The job applies [`torbrowser-tor-pluggable-transports.patch`](torbrowser-tor-pluggable-transports.patch) first.
+It asserts the lookup works under `torbrowser-tor//pluggable-transports`
+and still fails under `torbrowser-tor` itself.
 
 The lookup target only has to be a public name;
 `app.datapacket.com` is the domain front in the Snowflake bridge lines on the reporting machine.
