@@ -1,0 +1,84 @@
+name: reproduce
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APPARMOR_D_COMMIT: 4c4fec70fcd19307a871b3ecc7f117a9ad989c9f
+  JUST_VERSION: 1.40.0
+  JUST_SHA256: 181b91d0ceebe8a57723fb648ed2ce1a44d849438ce2e658339df4f8db5f1263
+  LOOKUP_NAME: app.datapacket.com
+
+jobs:
+  stock-profile:
+    name: stock torbrowser-tor (a red run means the bug reproduced)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install just, pinned and checksum-verified
+        run: |
+          curl --fail --location --output just.tar.gz "https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          echo "${JUST_SHA256}  just.tar.gz" | sha256sum --check
+          tar --extract --gzip --file just.tar.gz just
+          sudo install --mode=0755 just /usr/local/bin/just
+      - name: Fetch apparmor.d at the pinned commit
+        run: |
+          git clone --quiet https://github.com/roddhjav/apparmor.d.git apparmor.d
+          git -C apparmor.d checkout --quiet "${APPARMOR_D_COMMIT}"
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apparmor.d/go.mod
+      - name: Build the profiles (enforce, abi 4) and install torbrowser-tor alone
+        working-directory: apparmor.d
+        run: |
+          just build
+          ./.build/prebuild --buildir .build --enforce --abi 4
+          sudo just local torbrowser-tor
+          sudo apparmor_parser --replace /etc/apparmor.d/torbrowser-tor
+          sudo aa-status | grep --fixed-strings torbrowser-tor
+      - name: Control, outside any profile the name resolves
+        run: getent hosts "${LOOKUP_NAME}"
+      - name: Expected behaviour, the name resolves under torbrowser-tor (pluggable transports run here)
+        run: aa-exec --profile torbrowser-tor -- getent hosts "${LOOKUP_NAME}"
+
+  patched-profile:
+    name: torbrowser-tor with the pluggable-transports child profile
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install just, pinned and checksum-verified
+        run: |
+          curl --fail --location --output just.tar.gz "https://github.com/casey/just/releases/download/${JUST_VERSION}/just-${JUST_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          echo "${JUST_SHA256}  just.tar.gz" | sha256sum --check
+          tar --extract --gzip --file just.tar.gz just
+          sudo install --mode=0755 just /usr/local/bin/just
+      - name: Fetch apparmor.d at the pinned commit and apply the patch
+        run: |
+          git clone --quiet https://github.com/roddhjav/apparmor.d.git apparmor.d
+          git -C apparmor.d checkout --quiet "${APPARMOR_D_COMMIT}"
+          git -C apparmor.d apply --verbose ../torbrowser-tor-pluggable-transports.patch
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apparmor.d/go.mod
+      - name: Build the profiles (enforce, abi 4) and install torbrowser-tor alone
+        working-directory: apparmor.d
+        run: |
+          just build
+          ./.build/prebuild --buildir .build --enforce --abi 4
+          sudo just local torbrowser-tor
+          sudo apparmor_parser --replace /etc/apparmor.d/torbrowser-tor
+          sudo aa-status | grep --fixed-strings 'torbrowser-tor//pluggable-transports'
+      - name: Control, outside any profile the name resolves
+        run: getent hosts "${LOOKUP_NAME}"
+      - name: Expected behaviour, the name resolves under the pluggable-transports child
+        run: aa-exec --profile torbrowser-tor//pluggable-transports -- getent hosts "${LOOKUP_NAME}"
+      - name: Tor itself keeps its name-service denies
+        run: |
+          if aa-exec --profile torbrowser-tor -- getent hosts "${LOOKUP_NAME}"; then
+            echo "torbrowser-tor resolved a name; its denies are gone" >&2
+            exit 1
+          fi
